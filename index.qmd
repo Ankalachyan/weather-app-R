@@ -1,0 +1,19 @@
+---
+title: "Weather Insights"
+---
+
+## How different is Armenia's climate compared with the world’sand what are the reasons?
+
+## Why near climate net devices are being strange things,which is causing very high or very low temperature in data
+
+```{r}
+library(tidyverse)
+
+read.csv("GlobalTemperatures.csv") 
+read.csv("vazgen.csv") 
+```
+```{r}
+ globalEarth <- read.csv("Annual_Surface_Temperature_Change.csv") 
+globalEarth |> ggseasonplot()
+```
+
