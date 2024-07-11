@@ -1,0 +1,4 @@
+- source: project
+  quarto-pub:
+    - id: 036a6845-f4d4-4ce0-9751-a9230bbd75b3
+      url: 'https://ankalachyan.quarto.pub/weather-insights-website'

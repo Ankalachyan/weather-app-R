@@ -1,19 +1,172 @@
 ---
 title: "Weather Insights"
+execute: 
+  echo: false
+  warning: false
+
 ---
 
-## How different is Armenia's climate compared with the world’sand what are the reasons?
+## How different is Armenia's climate compared with the world’s and what can be the reasons?
+
+```{r setup}
+#| echo: false
+#| warning: false 
+#| message: false
+#| include: false
+library(tidyverse)  
+library(forecast)
+library(dplyr)
+library(ggplot2)
+library(viridis) 
+library(stringr)  
+library(patchwork)
+
+
+climentNet <- read.csv("vazgen.csv")
+str(climentNet)
+
+climentNet$time <- as.POSIXct(climentNet$time, format = "%Y-%m-%d %H:%M:%S", tz = "UTC")
+climentNet <- climentNet %>%
+  mutate(
+    Month = format(time, "%B"),  
+    Year = format(time, "%Y")
+  )
+
+climentNet <- climentNet %>%
+  mutate(
+    Month_Year = paste(Month, Year, sep = "-")
+  )
+
+monthly_summary <- climentNet %>%
+  group_by(Month_Year) %>%
+  summarize(
+    Average_Temperature = mean(temperature, na.rm = TRUE),
+    Total_Temperature = sum(temperature, na.rm = TRUE)
+  ) %>%
+  arrange(Month_Year)
+
+monthly_summary$Month_Year <- as.Date(paste0("01-", monthly_summary$Month_Year), format="%d-%B-%Y")
+
+
+
+globalEarth <- read.csv("GlobalTemperatures.csv")
+
+data_2022 <- globalEarth %>% filter(Year == 2022)
+data_2022_plot <- data_2022 %>% 
+  mutate(Month = factor(Month, levels = 1:12, labels = month.abb))  
+data_2022_plot <- data_2022_plot %>% filter(!is.na(Month.Anomaly))
+
+```
+
+
+```{r chunk1}
+ggplot(monthly_summary, aes(x = Month_Year, y = Average_Temperature)) +
+  geom_line(color = "blue", size = 1) +
+  geom_point(color = "blue", size = 2) +
+  scale_x_date(date_labels = "%b", date_breaks = "1 month") +
+  labs(
+    title = "Yerevan's Average Temperature",
+    subtitle = "Climate Net Device's Data at Vazgen Sargsyan",
+    x = "Months",
+    y = "Temperature (°C)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10),  
+        axis.title = element_text(size = 12), 
+        plot.title = element_text(size = 14, face = "bold"), 
+        panel.grid.major = element_line(size = 0.5, linetype = 'dotted', color = 'gray'), 
+        panel.grid.minor = element_blank())  +
+  geom_text(aes(label = sprintf("%.1f", Average_Temperature)), vjust = -0.5, size = 3, color = "black") 
+
+```
+```{r chunk2}
+
+
+ggplot(data_2022_plot, aes(x = Month, y = Month.Anomaly,group = 1)) +
+  geom_line(color = "purple", size = 1) + 
+  geom_point(color = "purple", size = 2) +  
+  geom_text(aes(label = round(Month.Anomaly, 2)), vjust = -0.5, size = 3, color = "black") + 
+  labs(title = "Global Earth's Monthly Temperature",
+       subtitle = "2022 Global Climate Data",
+       x = "Months",
+       y = "Temperature (°C)") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10),  
+        axis.title = element_text(size = 12), 
+        plot.title = element_text(size = 14, face = "bold"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'dotted', color = 'gray'), 
+        panel.grid.minor = element_blank())  
+
+```
+
+
+
+
+
+
+
+
+```{r}
+plot_climentNet <- ggplot(monthly_summary, aes(x = Month_Year, y = Average_Temperature)) +
+  geom_line(color = "blue", size = 1) +
+  geom_point(color = "blue", size = 2) +
+  scale_x_date(date_labels = "%b", date_breaks = "1 month") +
+  labs(
+    title="Yerevan's Average Temperature",
+    subtitle = "Climate Net Device's Data at Vazgen Sargsyan",
+    x = "Month",
+    y = "Average Temperature (°C)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10),  
+        axis.title = element_text(size = 12), 
+        plot.title = element_text(size = 14, face = "bold"), 
+        panel.grid.major = element_line(size = 0.5, linetype = 'dotted', color = 'gray'), 
+        panel.grid.minor = element_blank())  +
+  geom_text(aes(label = sprintf("%.1f", Average_Temperature)), vjust = -0.5, size = 3, color = "black")  
+
+
+
+plot_globalEarth <- ggplot(data_2022_plot, aes(x = Month, y = Month.Anomaly, group = 1)) +
+  geom_line(color = "purple", size = 1) + 
+  geom_point(color = "purple", size = 2) +  
+  geom_text(aes(label = round(Month.Anomaly, 2)), vjust = -0.5, size = 3, color = "black") + 
+  labs(title = "Global Earth's Monthly Temperature",
+       subtitle = "2022 Global Climate Data",
+       x = "Month",
+       y = "Average Temperature (°C)") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10),  
+        axis.title = element_text(size = 12), 
+        plot.title = element_text(size = 14, face = "bold"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'dotted', color = 'gray'), 
+        panel.grid.minor = element_blank())
+
+
+combined_plot <- plot_climentNet / plot_globalEarth  
+
+
+combined_plot
+```
+
+
+```{r chunk4}
+ggplot(data_2022, aes(x = Month, y = Month.Anomaly, fill = Month.Anomaly)) +
+  geom_bar(stat = "identity", color = "black") +
+  coord_polar(start = 0) +  
+  labs(title = "Monthly Temperature Anomalies for 2022",
+       x = NULL, 
+       y = "Temperature Anomaly (°C)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10),  
+        plot.title = element_text(size = 14, face = "bold"), 
+        panel.grid.major = element_line(size = 0.5, linetype = 'dotted', color = 'gray'),
+        panel.grid.minor = element_blank()) +
+  scale_fill_viridis_c(option = "D", direction = -1, name = "Temperature Anomaly") +  
+  geom_text(aes(label = sprintf("%.1f", Month.Anomaly)), 
+            position = position_stack(vjust = 0.5), 
+            color = "black", size = 3.5) 
+```
+
 
 ## Why near climate net devices are being strange things,which is causing very high or very low temperature in data
-
-```{r}
-library(tidyverse)
-
-read.csv("GlobalTemperatures.csv") 
-read.csv("vazgen.csv") 
-```
-```{r}
- globalEarth <- read.csv("Annual_Surface_Temperature_Change.csv") 
-globalEarth |> ggseasonplot()
-```
-
