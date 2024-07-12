@@ -57,48 +57,30 @@ data_2022_plot <- data_2022 %>%
 data_2022_plot <- data_2022_plot %>% filter(!is.na(Month.Anomaly))
 
 ```
-
-
-```{r chunk1}
-ggplot(monthly_summary, aes(x = Month_Year, y = Average_Temperature)) +
-  geom_line(color = "blue", size = 1) +
-  geom_point(color = "blue", size = 2) +
-  scale_x_date(date_labels = "%b", date_breaks = "1 month") +
-  labs(
-    title = "Yerevan's Average Temperature",
-    subtitle = "Climate Net Device's Data at Vazgen Sargsyan",
-    x = "Months",
-    y = "Temperature (°C)"
-  ) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10),  
-        axis.title = element_text(size = 12), 
-        plot.title = element_text(size = 14, face = "bold"), 
-        panel.grid.major = element_line(size = 0.5, linetype = 'dotted', color = 'gray'), 
-        panel.grid.minor = element_blank())  +
-  geom_text(aes(label = sprintf("%.1f", Average_Temperature)), vjust = -0.5, size = 3, color = "black") 
-
-```
-```{r chunk2}
-
-
-ggplot(data_2022_plot, aes(x = Month, y = Month.Anomaly,group = 1)) +
-  geom_line(color = "purple", size = 1) + 
-  geom_point(color = "purple", size = 2) +  
-  geom_text(aes(label = round(Month.Anomaly, 2)), vjust = -0.5, size = 3, color = "black") + 
+  
+  
+  
+```{r}
+ggplot(data_2022, aes(x = Month, y = Month.Anomaly, fill = Month.Anomaly)) +
+  geom_bar(stat = "identity", color = "black") +
+  coord_polar(start = 0) +  
   labs(title = "Global Earth's Monthly Temperature",
        subtitle = "2022 Global Climate Data",
-       x = "Months",
-       y = "Temperature (°C)") +
-  theme_minimal() + 
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10),  
-        axis.title = element_text(size = 12), 
-        plot.title = element_text(size = 14, face = "bold"),
-        panel.grid.major = element_line(size = 0.5, linetype = 'dotted', color = 'gray'), 
-        panel.grid.minor = element_blank())  
-
+       x = NULL, 
+       y = "Temperature Anomaly (°C)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10),  
+        plot.title = element_text(size = 14, face = "bold"), 
+        panel.grid.major = element_line(size = 0.5, linetype = 'dotted', color = 'gray'),
+        panel.grid.minor = element_blank()) +
+  scale_fill_viridis_c(option = "D", direction = -1, name = "Temperature Anomaly") +  
+  geom_text(aes(label = sprintf("%.1f", Month.Anomaly)), 
+            position = position_stack(vjust = 0.5), 
+            color = "black", size = 3.5) 
 ```
-
+  
+Earth's global temperature is influenced by a variety of natural and human-induced factors. Here are some key points that explain why Earth's global temperature behaves the way it does(Greenhouse Effect,Solar Radiation,Ocean Heat Storage,Land Use Changes,Natural Variability,Feedback Mechanisms).
+Overall, while natural factors have historically influenced Earth's climate, human activities since the Industrial Revolution have become the dominant driver of global temperature increases. Reducing greenhouse gas emissions and addressing other human-induced factors are crucial for mitigating further global warming and its associated impacts.
 
 
 
@@ -149,24 +131,6 @@ combined_plot <- plot_climentNet / plot_globalEarth
 combined_plot
 ```
 
-
-```{r chunk4}
-ggplot(data_2022, aes(x = Month, y = Month.Anomaly, fill = Month.Anomaly)) +
-  geom_bar(stat = "identity", color = "black") +
-  coord_polar(start = 0) +  
-  labs(title = "Monthly Temperature Anomalies for 2022",
-       x = NULL, 
-       y = "Temperature Anomaly (°C)") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10),  
-        plot.title = element_text(size = 14, face = "bold"), 
-        panel.grid.major = element_line(size = 0.5, linetype = 'dotted', color = 'gray'),
-        panel.grid.minor = element_blank()) +
-  scale_fill_viridis_c(option = "D", direction = -1, name = "Temperature Anomaly") +  
-  geom_text(aes(label = sprintf("%.1f", Month.Anomaly)), 
-            position = position_stack(vjust = 0.5), 
-            color = "black", size = 3.5) 
-```
-
+To be more visually comfortable to compare Yerevan's and The whole Earth's Temperature.
 
 ## Why near climate net devices are being strange things,which is causing very high or very low temperature in data

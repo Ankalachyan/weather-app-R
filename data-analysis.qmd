@@ -1,4 +1,185 @@
 ---
 title: "Data Analysis"
 editor: visual
+execute: 
+  echo: false
+  warning: false
 ---
+```{r}
+#| echo: false
+#| warning: false 
+#| message: false
+#| include: false
+library(tidyverse)  
+library(forecast)
+library(dplyr)
+library(ggplot2)
+library(viridis) 
+library(stringr)  
+library(patchwork)
+library(plotly)
+
+
+
+climentNet <- read.csv("vazgen.csv")
+str(climentNet)
+
+climentNet$time <- as.POSIXct(climentNet$time, format = "%Y-%m-%d %H:%M:%S", tz = "UTC")
+climentNet <- climentNet %>%
+  mutate(
+    Month = format(time, "%B"),  
+    Year = format(time, "%Y")
+  )
+
+climentNet <- climentNet %>%
+  mutate(
+    Month_Year = paste(Month, Year, sep = "-")
+  )
+
+monthly_summary <- climentNet %>%
+  group_by(Month_Year) %>%
+  summarize(
+    Average_Temperature = mean(temperature, na.rm = TRUE),
+    Total_Temperature = sum(temperature, na.rm = TRUE)
+  ) %>%
+  arrange(Month_Year)
+
+monthly_summary$Month_Year <- as.Date(paste0("01-", monthly_summary$Month_Year), format="%d-%B-%Y")
+
+
+
+globalEarth <- read.csv("GlobalTemperatures.csv")
+
+data_2022 <- globalEarth %>% filter(Year == 2022)
+data_2022_plot <- data_2022 %>% 
+  mutate(Month = factor(Month, levels = 1:12, labels = month.abb))  
+data_2022_plot <- data_2022_plot %>% filter(!is.na(Month.Anomaly))
+
+
+```
+
+```{r}
+devices <- c("maralik", "gavar", "artik", "ashotsk", "azatan", "panik")
+
+read_device_data <- function(device) {
+  data <- read.csv(paste0(device, ".csv"))
+  data$device <- device
+  return(data)
+}
+
+all_data <- lapply(devices, read_device_data) %>%
+  bind_rows()
+head(all_data)
+
+```
+
+
+```{r}
+
+all_data$time <- as.POSIXct(all_data$time, format = "%Y-%m-%d %H:%M:%S", tz = "UTC")
+all_data <- all_data %>%
+  mutate(
+    Month = format(time, "%B"),  
+    Year = format(time, "%Y")
+  )
+  
+  
+all_data2 <- all_data %>% 
+  group_by(device, Month) %>%
+  summarize(Mean_temp = mean(temperature, na.rm=TRUE))
+
+all_data2
+```
+
+
+```{r}
+
+library(ggplot2)
+library(plotly)
+
+# Convert Month to factor with specified order
+all_data2$Month <- factor(all_data2$Month, levels = month.name)
+
+# Create ggplot object
+p <- ggplot(all_data2, aes(x = Month, y = Mean_temp, color = device, group = device)) +
+  geom_line(size = 1) +     
+  scale_color_viridis_d(option = "D") +                             
+  labs(title = "Mean Temperature by Month and Device",
+       x = "Month",
+       y = "Mean Temperature",
+       color = "Device") +
+  theme_minimal() +                                                
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+print(p)
+
+
+p_plotly <- ggplotly(p)
+
+
+p_plotly <- p_plotly %>%
+  layout(title = list(text = "Mean Temperature by Month and Device"), 
+         xaxis = list(title = "Month"),                                
+         yaxis = list(title = "Mean Temperature"),                      # Customizing y-axis label
+         legend = list(title = "Device", orientation = "h", x = 0.5, y = -0.15))  # Customizing legend position and title
+
+
+p_plotly
+
+
+
+```
+
+```{r}
+ggplot(monthly_summary, aes(x = Month_Year, y = Average_Temperature)) +
+  geom_line(color = "blue", size = 1) +
+  geom_point(color = "blue", size = 2) +
+  scale_x_date(date_labels = "%b", date_breaks = "1 month") +
+  labs(
+    title = "Yerevan's Average Temperature",
+    subtitle = "Climate Net Device's Data at Vazgen Sargsyan",
+    x = "Months",
+    y = "Temperature (°C)"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10),  
+        axis.title = element_text(size = 12), 
+        plot.title = element_text(size = 14, face = "bold"), 
+        panel.grid.major = element_line(size = 0.5, linetype = 'dotted', color = 'gray'), 
+        panel.grid.minor = element_blank())  +
+  geom_text(aes(label = sprintf("%.1f", Average_Temperature)), vjust = -0.5, size = 3, color = "black") 
+
+```
+
+
+This is Yerevan's Temperature from Climate Net project's devices,especially Vazgen Sargsyan's device's data.It collected data starting from 2023 november till now.And the plot you can see is based on that information
+
+
+
+```{r chunk2}
+ggplot(data_2022_plot, aes(x = Month, y = Month.Anomaly,group = 1)) +
+  geom_line(color = "purple", size = 1) + 
+  geom_point(color = "purple", size = 2) +  
+  geom_text(aes(label = round(Month.Anomaly, 2)), vjust = -0.5, size = 3, color = "black") + 
+  labs(title = "Global Earth's Monthly Temperature",
+       subtitle = "2022 Global Climate Data",
+       x = "Months",
+       y = "Temperature (°C)") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 10),  
+        axis.title = element_text(size = 12), 
+        plot.title = element_text(size = 14, face = "bold"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'dotted', color = 'gray'), 
+        panel.grid.minor = element_blank())  
+
+
+```
+
+### Climate Net Devices In Armenia
+```{r}
+knitr::include_graphics("box.png")
+```
+
+
+
